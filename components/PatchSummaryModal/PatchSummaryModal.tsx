@@ -92,7 +92,7 @@ const PatchSummaryModal = ({
         {shouldShowGrouped ? (
           <GroupedPatchList options={options} onChange={setOptions} />
         ) : (
-          <PatchList patches={patches} />
+          <PatchList options={options} onChange={setOptions} />
         )}
       </Modal.Body>
       <Modal.Footer>
