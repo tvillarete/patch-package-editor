@@ -1,10 +1,9 @@
-import * as Fuzz from 'fuzzball';
 import { useCallback, useContext, useMemo } from 'react';
 
 import { PatchParserContext } from './PatchParserProvider';
 import { PatchDiff } from './sharedTypes';
 
-const parseSection = (section: string) => {
+const parseSection = (section: string, marker?: string) => {
   const lines = section.trim().split('\n');
   const raw = `diff --git${section}`;
 
@@ -19,9 +18,9 @@ const parseSection = (section: string) => {
 
   const filePath = diffPlus?.substring(5);
 
-  const marker = patchContents
-    ?.find((line) => line.includes('@brex-override'))
-    ?.trim();
+  const markerLine = marker
+    ? patchContents?.find((line) => line.includes(marker))?.trim()
+    : undefined;
 
   const patchDiff: PatchDiff = {
     filePaths: pathDiffs,
@@ -30,7 +29,7 @@ const parseSection = (section: string) => {
     diffPlus: filePath,
     lineNumbers,
     patchContents,
-    marker,
+    markerLine,
     raw,
   };
 
@@ -62,7 +61,7 @@ const usePatchParserContext = () => {
             ?.trim()
             .split('diff --git')
             .filter(Boolean)
-            .map(parseSection) ?? [];
+            .map((section) => parseSection(section, state.marker)) ?? [];
 
         setState((prevState) => ({
           ...prevState,
@@ -79,11 +78,21 @@ const usePatchParserContext = () => {
         return false;
       }
     },
+    [setState, state.marker]
+  );
+
+  const handleSetMarker = useCallback(
+    (marker?: string) => {
+      setState((prevState) => ({
+        ...prevState,
+        marker,
+      }));
+    },
     [setState]
   );
 
   const handleReset = useCallback(() => {
-    setState((prevState) => ({
+    setState(() => ({
       patchSections: undefined,
     }));
   }, [setState]);
@@ -92,9 +101,10 @@ const usePatchParserContext = () => {
     () => ({
       handleParsePatch,
       handleReset,
+      handleSetMarker,
       state,
     }),
-    [handleParsePatch, handleReset, state]
+    [handleParsePatch, handleReset, handleSetMarker, state]
   );
 
   return returnValue;

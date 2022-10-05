@@ -5,7 +5,7 @@ export type PatchDiff = {
   diffPlus: string;
   lineNumbers: string;
   patchContents: string[];
-  marker?: string;
+  markerLine?: string;
   raw: string;
 };
 

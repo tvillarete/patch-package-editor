@@ -1,19 +1,15 @@
 import {
-  Badge,
   Button,
   Col,
-  Container,
-  Grid,
   Modal,
-  ModalProps,
+  Popover,
   Row,
   Spacer,
   Switch,
-  Table,
   Text,
   useModal,
 } from '@nextui-org/react';
-import PatchList from 'components/PatchSummaryModal/PatchList';
+import PatchList from './PatchList';
 import { PatchDiff, usePatchParserContext } from 'hooks/usePatchParserContext';
 import pluralize from 'pluralize';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -32,9 +28,12 @@ const PatchSummaryModal = ({
 }: PatchSummaryModalProps) => {
   const { state } = usePatchParserContext();
 
-  const [shouldShowGrouped, setShouldShowGroup] = useState<boolean>(true);
+  const [shouldGroupByMarker, setShouldGroupByMarker] =
+    useState<boolean>(false);
   const { patchSections: patches = [] } = state;
   const [options, setOptions] = useState<SelectOption[]>([]);
+  const hasMarker = !!state.marker;
+  const hasOptions = options.length > 0;
 
   const selectedOptions = useMemo(
     () => options.filter((option) => option.isSelected),
@@ -50,18 +49,17 @@ const PatchSummaryModal = ({
       .map((option) => option.patch.raw)
       .join('\n');
 
-    console.log({ newFile });
     navigator.clipboard.writeText(newFile);
+  }, [selectedOptions]);
 
-    setVisible(false);
-  }, [selectedOptions, setVisible]);
-
-  useEffect(() => {
+  const handleOpen = useCallback(() => {
     handleSelectAll();
-  }, [handleSelectAll, patches]);
+    setShouldGroupByMarker(hasOptions && hasMarker);
+  }, [handleSelectAll, hasMarker, hasOptions]);
 
   return (
     <Modal
+      onOpen={handleOpen}
       scroll
       width="1000px"
       aria-labelledby="modal-title"
@@ -79,29 +77,44 @@ const PatchSummaryModal = ({
               <Spacer x={0.5} />
               <Switch
                 size="sm"
-                shadow
                 color="primary"
-                checked={shouldShowGrouped}
-                onChange={(e) => setShouldShowGroup(e.target.checked)}
+                checked={shouldGroupByMarker}
+                onChange={(e) => setShouldGroupByMarker(e.target.checked)}
               />
             </Row>
           </Col>
         </Col>
       </Modal.Header>
       <Modal.Body>
-        {shouldShowGrouped ? (
+        {shouldGroupByMarker ? (
           <GroupedPatchList options={options} onChange={setOptions} />
         ) : (
           <PatchList options={options} onChange={setOptions} />
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button auto flat color="secondary" onClick={() => setVisible(false)}>
-          Cancel
+        <Button auto bordered color="default" onPress={() => setVisible(false)}>
+          Close
         </Button>
-        <Button auto onClick={handleApply}>
-          Apply {selectedOptions.length} Patches
-        </Button>
+        <Popover isBordered placement="top">
+          <Popover.Trigger>
+            <Button
+              color="gradient"
+              disabled={!selectedOptions.length}
+              auto
+              ripple={false}
+              onPress={handleApply}
+            >
+              Copy {selectedOptions.length}{' '}
+              {pluralize('patch', selectedOptions.length)}
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content>
+            <Text css={{ padding: '10px' }}>
+              New patch contents have been copied to your clipboard
+            </Text>
+          </Popover.Content>
+        </Popover>
       </Modal.Footer>
     </Modal>
   );

@@ -4,6 +4,7 @@ import { PatchDiff } from './sharedTypes';
 
 export type PatchParserProviderState = {
   patchSections?: PatchDiff[];
+  marker?: string;
 };
 
 export type PatchParserProviderValue = [

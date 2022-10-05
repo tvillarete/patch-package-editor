@@ -6,20 +6,22 @@ type PatchDiffGroupMap = Record<string, PatchSelectOption[]>;
 
 export const groupPatchesByMarker = (options: PatchSelectOption[]) => {
   const groups: PatchDiffGroupMap = {};
-  const markers = options.map((option) => option.patch.marker ?? 'Unmarked');
+  const markers = options.map(
+    (option) => option.patch.markerLine ?? 'Unmarked'
+  );
   const seenIndices: Record<string, boolean> = {};
 
   for (let index = 0; index < options.length; index++) {
     const patchDiff = options[index].patch;
 
-    const { marker } = patchDiff;
+    const { markerLine } = patchDiff;
 
-    if (!marker || seenIndices[marker]) {
+    if (!markerLine || seenIndices[markerLine]) {
       continue;
     }
-    seenIndices[marker] = true;
+    seenIndices[markerLine] = true;
 
-    const results = Fuzz.extract(marker, markers);
+    const results = Fuzz.extract(markerLine, markers);
 
     const filteredResults = results.filter(([_, score]) => score > 80);
 
@@ -28,7 +30,7 @@ export const groupPatchesByMarker = (options: PatchSelectOption[]) => {
       return options[j];
     });
 
-    groups[marker] = [...(groups[marker] ?? []), ...patchesToAdd];
+    groups[markerLine] = [...(groups[markerLine] ?? []), ...patchesToAdd];
   }
 
   return groups;
